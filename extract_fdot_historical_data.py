@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Apr 5 22:54:36 2025
+Created on Tue Apr 1 22:54:36 2025
 
 @author: kwill
 """
@@ -8,6 +8,8 @@ Created on Sat Apr 5 22:54:36 2025
 import pandas as pd
 import PyPDF2
 import re
+
+# TODO Add description column
 
 # Extract text from the PDF file
 def extract_traffic_data(pdf_path):

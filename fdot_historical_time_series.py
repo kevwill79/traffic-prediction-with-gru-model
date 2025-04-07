@@ -32,7 +32,7 @@ def process_data(data_path):
 
 # Prepare dataset for GRU
 sequence_length = 5
-def create_sequences(data, labels, seq_length):
+def create_time_sequences(data, labels, seq_length):
     sequences, label_seq = [], []
     for i in range(len(data) - seq_length):
         sequences.append(data[i:i+seq_length])
@@ -42,7 +42,7 @@ def create_sequences(data, labels, seq_length):
 def get_model_training_data():
     df, num_classes = process_data(pdf_path)
     
-    X, y = create_sequences(df["AADT"].values, df["Congestion_Level"].values, sequence_length)
+    X, y = create_time_sequences(df["AADT"].values, df["Congestion_Level"].values, sequence_length)
     X = torch.tensor(X, dtype=torch.float32).unsqueeze(-1)
     y = torch.tensor(y, dtype=torch.long)  # Classification labels
     
