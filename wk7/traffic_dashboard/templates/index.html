@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Traffic AADT Forecast Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background-color: #f9f9f9;
+        }
+        .dashboard {
+            max-width: 900px;
+            margin: auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2, h3 {
+            text-align: center;
+        }
+        input {
+            margin: 4px;
+            padding: 6px;
+            width: 90px;
+        }
+        #predictForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        button {
+            margin-top: 15px;
+            padding: 8px 20px;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h2>Forecast AADT for a Site</h2>
+        <form id="predictForm">
+            <label for="site">Site ID:</label>
+            <input type="text" id="site" name="site" required><br><br>
+
+            <h3>Enter 5 Years of Data (AADT, Temp, Wind)</h3>
+            <div id="dataInputs"></div>
+            <button type="submit">Predict</button>
+        </form>
+
+        <div id="result" style="margin-top:20px;"></div>
+        <canvas id="chart" width="700" height="300"></canvas>
+    </div>
+
+    <script>
+        const container = document.getElementById("dataInputs");
+        for (let i = 0; i < 5; i++) {
+            container.innerHTML += `Year ${i + 1}: 
+                <input type="number" placeholder="AADT" step="any" required>
+                <input type="number" placeholder="Temp" step="any" required>
+                <input type="number" placeholder="Wind" step="any" required><br>`;
+        }
+
+        document.getElementById("predictForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const site = document.getElementById("site").value;
+            const rows = Array.from(document.querySelectorAll("#dataInputs input"));
+            const features = [];
+            for (let i = 0; i < rows.length; i += 3) {
+                const row = [
+                    parseFloat(rows[i].value),
+                    parseFloat(rows[i + 1].value),
+                    parseFloat(rows[i + 2].value)
+                ];
+                features.push(row);
+            }
+
+            const res = await fetch("/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ site, features })
+            });
+
+            const data = await res.json();
+            const out = document.getElementById("result");
+            if (data.error) {
+                out.innerHTML = "<b style='color:red;'>Error:</b> " + data.error;
+            } else {
+                out.innerHTML = `<b>Forecasted AADT:</b> ${data.forecasted_AADT} <br>
+                                 <b>Congestion Level:</b> ${data.congestion_level}`;
+
+                const ctx = document.getElementById("chart").getContext("2d");
+                const actual = features.map(x => x[0]);
+                const forecast = [...actual, data.forecasted_AADT];
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ["Y1", "Y2", "Y3", "Y4", "Y5", "Forecast"],
+                        datasets: [{
+                            label: 'AADT',
+                            data: forecast,
+                            borderColor: 'blue',
+                            fill: false
+                        }]
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
